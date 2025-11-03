@@ -17,6 +17,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Voz a Texto',
       theme: ThemeData(useMaterial3: true),
+      debugShowCheckedModeBanner: false, // Desactivar la etiqueta de depuración
       home: const VoiceToTextPage(),
     );
   }
