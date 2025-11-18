@@ -85,42 +85,8 @@ class HttpAiClient implements AiClient {
       final data = jsonDecode(res.body);
       return _parseTasks(data);
     } else {
-<<<<<<< HEAD
-      // Mostrar el error en la consola
-      print('Error de IA ${res.statusCode}: ${res.body}');
-
-      // JSON de ejemplo para devolver tareas de prueba
-      final today = DateTime.now();
-      
-      final demo = {
-        "tasks": [
-          {
-            "id": "demo-1",
-            "title": "Comprar leche y pan",
-            "notes": "Del súper cercano",
-            "due_date": _formatDate(today.add(const Duration(days: 1))),
-          },
-          {
-            "id": "demo-2",
-            "title": "Enviar reporte de ventas",
-            "notes": "Adjuntar gráficos",
-            "due_date": _formatDate(today.add(const Duration(days: 2))),
-          },
-          {
-            "id": "demo-23",
-            "title": "Esto es una tarea de prueba",
-            "notes": "Nota de prueba",
-            "due_date": _formatDate(today.add(const Duration(days: 2))),
-          },
-        ],
-      };
-      return (demo['tasks'] as List)
-          .map((e) => Task.fromJson(e as Map<String, dynamic>))
-          .toList();
-=======
       debugPrint('[AI] Error de IA ${res.statusCode}: ${res.body}');
       return _demoTasks();
->>>>>>> a5644ed4c6ca61d313a9094369223ac62ea7f734
     }
   }
 
@@ -178,14 +144,7 @@ Eres un extractor de tareas. Tu ÚNICA respuesta debe ser SOLO JSON válido seg�
           "role": "user",
           "parts": [
             // {"text": transcript},
-<<<<<<< HEAD
             {"text": _buildPrompt(transcript)}
-=======
-            {
-              "text":
-                  "Eres un asistente que extrae tareas de una transcripción de voz. Analiza el siguiente texto y extrae todas las tareas mencionadas con sus fechas de vencimiento si se mencionan:\n\n$transcript \n\n Ten cuenta que la fecha de hoy es:   ${DateTime.now().toIso8601String()}\n\n Devuelve la respuesta en formato JSON con la siguiente estructura:\n\n{\n  \"tasks\": [\n    {\n      \"id\": \"<ID ÚNICO>\",\n      \"title\": \"<TÍTULO DE LA TAREA>\",\n      \"notes\": \"<NOTAS ADICIONALES>\",\n      \"due_date\": \"<FECHA DE VENCIMIENTO EN FORMATO ISO8601>\"\n    },\n    ...\n  ]\n}\n\n Si no hay tareas, devuelve un array vacío.",
-            },
->>>>>>> a5644ed4c6ca61d313a9094369223ac62ea7f734
           ],
         },
       ],
@@ -206,13 +165,7 @@ Eres un extractor de tareas. Tu ÚNICA respuesta debe ser SOLO JSON válido seg�
                   "notes": {"type": "string"},
                   "due_date": {
                     "type": "string",
-<<<<<<< HEAD
                     "description": "Fecha de vencimiento en formato YYYY-MM-DD (solo fecha, sin hora).",
-=======
-                    "format": "date-time",
-                    "description":
-                        "ISO 8601 con zona horaria local, p.ej. 2025-11-07T00:00:00-05:00",
->>>>>>> a5644ed4c6ca61d313a9094369223ac62ea7f734
                   },
                 },
                 "required": ["title"],
