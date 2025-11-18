@@ -30,6 +30,8 @@ class SpeechService {
         listenMode: ListenMode.dictation,
       ),
       localeId: localeId,
+      pauseFor: const Duration(seconds: 2), // Tiempo de pausa para considarar que el usuario finalizó de hablar
+      listenFor: const Duration(minutes: 5), // Tiempo máximo de escucha continua
     );
     return ok ?? false;
   }

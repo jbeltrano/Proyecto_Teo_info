@@ -34,31 +34,27 @@ class HttpAiClient implements AiClient {
       print('Error de IA ${res.statusCode}: ${res.body}');
 
       // JSON de ejemplo para devolver tareas de prueba
+      final today = DateTime.now();
+      
       final demo = {
         "tasks": [
           {
             "id": "demo-1",
             "title": "Comprar leche y pan",
             "notes": "Del súper cercano",
-            "due_date": DateTime.now()
-                .add(const Duration(days: 1))
-                .toIso8601String(),
+            "due_date": _formatDate(today.add(const Duration(days: 1))),
           },
           {
             "id": "demo-2",
             "title": "Enviar reporte de ventas",
             "notes": "Adjuntar gráficos",
-            "due_date": DateTime.now()
-                .add(const Duration(days: 2))
-                .toIso8601String(),
+            "due_date": _formatDate(today.add(const Duration(days: 2))),
           },
           {
             "id": "demo-23",
             "title": "Esto es una tarea de prueba",
             "notes": "Nota de prueba",
-            "due_date": DateTime.now()
-                .add(const Duration(days: 2))
-                .toIso8601String(),
+            "due_date": _formatDate(today.add(const Duration(days: 2))),
           },
         ],
       };
@@ -68,13 +64,30 @@ class HttpAiClient implements AiClient {
     }
   }
 
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  String _buildPrompt(String transcript) {
+    final today = _formatDate(DateTime.now());
+    return """Eres un asistente que extrae tareas de una transcripción de voz. Analiza el siguiente texto y extrae todas las tareas mencionadas con sus fechas de vencimiento si se mencionan:
+
+$transcript
+
+Ten en cuenta que la fecha de hoy es: $today
+
+IMPORTANTE: Solo debes extraer y devolver la FECHA (formato YYYY-MM-DD), NO incluyas hora ni información de tiempo. Si el usuario menciona horas, ignóralas y solo considera la fecha del día.
+
+""";
+  }
+
   Map<String, dynamic> _buildRequestBody(String transcript) {
     return {
       "contents": [
         {
           "parts": [
             // {"text": transcript},
-            {"text": "Eres un asistente que extrae tareas de una transcripción de voz. Analiza el siguiente texto y extrae todas las tareas mencionadas con sus fechas de vencimiento si se mencionan:\n\n$transcript \n\n Ten cuenta que la fecha de hoy es:   ${DateTime.now().toIso8601String()}\n\n Devuelve la respuesta en formato JSON con la siguiente estructura:\n\n{\n  \"tasks\": [\n    {\n      \"id\": \"<ID ÚNICO>\",\n      \"title\": \"<TÍTULO DE LA TAREA>\",\n      \"notes\": \"<NOTAS ADICIONALES>\",\n      \"due_date\": \"<FECHA DE VENCIMIENTO EN FORMATO ISO8601>\"\n    },\n    ...\n  ]\n}\n\n Si no hay tareas, devuelve un array vacío."}
+            {"text": _buildPrompt(transcript)}
           ],
         },
       ],
@@ -99,7 +112,7 @@ class HttpAiClient implements AiClient {
                   },
                   "due_date": {
                     "type": "string",
-                    "description": "Fecha de vencimiento en formato ISO8601.",
+                    "description": "Fecha de vencimiento en formato YYYY-MM-DD (solo fecha, sin hora).",
                   },
                 },
                 "required": ["title"],

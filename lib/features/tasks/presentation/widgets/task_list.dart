@@ -8,6 +8,10 @@ class TaskList extends StatelessWidget {
 
   final List<Task> tasks;
 
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (tasks.isEmpty) {
@@ -21,7 +25,7 @@ class TaskList extends StatelessWidget {
       itemBuilder: (context, index) {
         final t = tasks[index];
         final due = t.dueDate != null
-            ? 'Vence: ${t.dueDate!.toLocal()}'
+            ? 'Vence: ${_formatDate(t.dueDate!)}'
             : 'Sin fecha';
         final controller = context.read<TaskController>();
         
