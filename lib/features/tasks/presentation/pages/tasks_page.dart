@@ -76,6 +76,27 @@ class _TasksPageState extends State<TasksPage> {
     setState(() => _status = 'Mantén presionado para hablar');
   }
 
+  Widget _buildSectionHeader(
+    ThemeData theme,
+    String title,
+    IconData icon,
+    Color color,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, color: color, size: 24),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: color,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   void dispose() {
     _speech.cancel();
@@ -135,9 +156,37 @@ class _TasksPageState extends State<TasksPage> {
                   const SizedBox(height: 16),
                   if (ctrl?.isLoading ?? false) const LinearProgressIndicator(),
                   const SizedBox(height: 8),
-                  Text('Tareas', style: theme.textTheme.titleLarge),
+                  
+                  // Sección de Tareas Pendientes
+                  _buildSectionHeader(
+                    theme,
+                    'Tareas Pendientes',
+                    Icons.pending_actions,
+                    theme.colorScheme.primary,
+                  ),
                   const SizedBox(height: 8),
-                  TaskList(tasks: ctrl?.tasks ?? const []),
+                  TaskList(
+                    tasks: (ctrl?.tasks ?? const [])
+                        .where((task) => !task.isCompleted)
+                        .toList(),
+                  ),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Sección de Tareas Completadas
+                  _buildSectionHeader(
+                    theme,
+                    'Tareas Completadas',
+                    Icons.check_circle,
+                    Colors.green,
+                  ),
+                  const SizedBox(height: 8),
+                  TaskList(
+                    tasks: (ctrl?.tasks ?? const [])
+                        .where((task) => task.isCompleted)
+                        .toList(),
+                  ),
+                  
                   if (ctrl?.error != null) ...[
                     const SizedBox(height: 12),
                     Text(

@@ -28,4 +28,21 @@ class TaskController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Alterna el estado de completado de una tarea
+  void toggleTaskCompletion(String taskId) {
+    tasks = tasks.map((task) {
+      if (task.id == taskId) {
+        return task.copyWith(isCompleted: !task.isCompleted);
+      }
+      return task;
+    }).toList();
+    notifyListeners();
+  }
+
+  /// Elimina una tarea de la lista
+  void deleteTask(String taskId) {
+    tasks = tasks.where((task) => task.id != taskId).toList();
+    notifyListeners();
+  }
 }

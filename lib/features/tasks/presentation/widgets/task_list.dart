@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:proyecto_teo_info/features/tasks/data/models/task.dart';
+import 'package:proyecto_teo_info/features/tasks/presentation/controllers/task_controller.dart';
 
 class TaskList extends StatelessWidget {
   const TaskList({super.key, required this.tasks});
@@ -21,13 +23,32 @@ class TaskList extends StatelessWidget {
         final due = t.dueDate != null
             ? 'Vence: ${t.dueDate!.toLocal()}'
             : 'Sin fecha';
+        final controller = context.read<TaskController>();
+        
         return ListTile(
-          leading: const Icon(Icons.check_box_outline_blank),
-          title: Text(t.title),
+          leading: Checkbox(
+            value: t.isCompleted,
+            onChanged: (_) => controller.toggleTaskCompletion(t.id),
+          ),
+          title: Text(
+            t.title,
+            style: TextStyle(
+              color: t.isCompleted ? Colors.black.withOpacity(0.4) : Colors.black,
+              decoration: t.isCompleted ? TextDecoration.lineThrough : null,
+            ),
+          ),
           subtitle: Text(
             t.notes?.isNotEmpty == true ? '${t.notes}\n$due' : due,
+            style: TextStyle(
+              color: t.isCompleted ? Colors.black.withOpacity(0.4) : null,
+            ),
           ),
           isThreeLine: t.notes?.isNotEmpty == true,
+          trailing: IconButton(
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            onPressed: () => controller.deleteTask(t.id),
+            tooltip: 'Eliminar tarea',
+          ),
         );
       },
     );

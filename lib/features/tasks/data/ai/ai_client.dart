@@ -16,11 +16,12 @@ class HttpAiClient implements AiClient {
   @override
   Future<List<Task>> extractTasks(String transcript) async {
     final body = _buildRequestBody(transcript);
+    // La API de Gemini usa la key como parámetro en la URL, no en el header
+    final uri = Uri.parse('$endpoint?key=$apiKey');
     final res = await http.post(
-      Uri.parse(endpoint),
+      uri,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $apiKey', // Asegúrate de incluir el API key
       },
       body: jsonEncode(body),
     );
@@ -51,6 +52,14 @@ class HttpAiClient implements AiClient {
                 .add(const Duration(days: 2))
                 .toIso8601String(),
           },
+          {
+            "id": "demo-23",
+            "title": "Esto es una tarea de prueba",
+            "notes": "Nota de prueba",
+            "due_date": DateTime.now()
+                .add(const Duration(days: 2))
+                .toIso8601String(),
+          },
         ],
       };
       return (demo['tasks'] as List)
@@ -64,7 +73,8 @@ class HttpAiClient implements AiClient {
       "contents": [
         {
           "parts": [
-            {"text": transcript},
+            // {"text": transcript},
+            {"text": "Eres un asistente que extrae tareas de una transcripción de voz. Analiza el siguiente texto y extrae todas las tareas mencionadas con sus fechas de vencimiento si se mencionan:\n\n$transcript \n\n Ten cuenta que la fecha de hoy es:   ${DateTime.now().toIso8601String()}\n\n Devuelve la respuesta en formato JSON con la siguiente estructura:\n\n{\n  \"tasks\": [\n    {\n      \"id\": \"<ID ÚNICO>\",\n      \"title\": \"<TÍTULO DE LA TAREA>\",\n      \"notes\": \"<NOTAS ADICIONALES>\",\n      \"due_date\": \"<FECHA DE VENCIMIENTO EN FORMATO ISO8601>\"\n    },\n    ...\n  ]\n}\n\n Si no hay tareas, devuelve un array vacío."}
           ],
         },
       ],
