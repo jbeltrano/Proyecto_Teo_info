@@ -7,10 +7,6 @@ class TaskList extends StatelessWidget {
   final List<Task> tasks;
   const TaskList({super.key, required this.tasks});
 
-  String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     final ctrl = context.read<TaskController>();
@@ -20,19 +16,6 @@ class TaskList extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: tasks.length,
       separatorBuilder: (_, __) => const Divider(height: 1),
-<<<<<<< HEAD
-      itemBuilder: (context, index) {
-        final t = tasks[index];
-        final due = t.dueDate != null
-            ? 'Vence: ${_formatDate(t.dueDate!)}'
-            : 'Sin fecha';
-        final controller = context.read<TaskController>();
-        
-        return ListTile(
-          leading: Checkbox(
-            value: t.isCompleted,
-            onChanged: (_) => controller.toggleTaskCompletion(t.id),
-=======
       itemBuilder: (_, i) {
         final t = tasks[i];
         return Dismissible(
@@ -43,7 +26,6 @@ class TaskList extends StatelessWidget {
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: const Icon(Icons.delete, color: Colors.white),
->>>>>>> a5644ed4c6ca61d313a9094369223ac62ea7f734
           ),
           confirmDismiss: (_) async {
             return await showDialog<bool>(
