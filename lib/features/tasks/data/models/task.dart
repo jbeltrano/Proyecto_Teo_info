@@ -52,22 +52,24 @@ class Task {
   );
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
-        id: json['id']?.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
-        title: (json['title'] ?? '').toString(),
-        notes: json['notes'] as String?,
-        // Acepta 'due_date' (IA/DB) o 'dueDate' (posible variante)
-        dueDate: _parseDueDate(json['due_date'] ?? json['dueDate']),
-        done: (json['done'] is bool)
-            ? json['done'] as bool
-            : (json['done'] is int ? (json['done'] == 1) : false),
-      );
+    id:
+        json['id']?.toString() ??
+        DateTime.now().millisecondsSinceEpoch.toString(),
+    title: (json['title'] ?? '').toString(),
+    notes: json['notes'] as String?,
+    // Acepta 'due_date' (IA/DB) o 'dueDate' (posible variante)
+    dueDate: _parseDueDate(json['due_date'] ?? json['dueDate']),
+    done: (json['done'] is bool)
+        ? json['done'] as bool
+        : (json['done'] is int ? (json['done'] == 1) : false),
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'notes': notes,
-        // Persistimos con 'due_date'
-        'due_date': dueDate?.toIso8601String(),
-        'done': done,
-      };
+    'id': id,
+    'title': title,
+    'notes': notes,
+    // Persistimos con 'due_date'
+    'due_date': dueDate?.toIso8601String(),
+    'done': done,
+  };
 }

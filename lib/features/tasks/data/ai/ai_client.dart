@@ -126,7 +126,11 @@ Eres un extractor de tareas. Tu ÚNICA respuesta debe ser SOLO JSON válido seg�
         {
           "role": "user",
           "parts": [
-            {"text": transcript},
+            // {"text": transcript},
+            {
+              "text":
+                  "Eres un asistente que extrae tareas de una transcripción de voz. Analiza el siguiente texto y extrae todas las tareas mencionadas con sus fechas de vencimiento si se mencionan:\n\n$transcript \n\n Ten cuenta que la fecha de hoy es:   ${DateTime.now().toIso8601String()}\n\n Devuelve la respuesta en formato JSON con la siguiente estructura:\n\n{\n  \"tasks\": [\n    {\n      \"id\": \"<ID ÚNICO>\",\n      \"title\": \"<TÍTULO DE LA TAREA>\",\n      \"notes\": \"<NOTAS ADICIONALES>\",\n      \"due_date\": \"<FECHA DE VENCIMIENTO EN FORMATO ISO8601>\"\n    },\n    ...\n  ]\n}\n\n Si no hay tareas, devuelve un array vacío.",
+            },
           ],
         },
       ],
