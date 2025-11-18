@@ -100,10 +100,32 @@ class HttpAiClient implements AiClient {
 
 $transcript
 
-Ten en cuenta que la fecha de hoy es: $today
+Ten en cuenta que la fecha de hoy es: $today.
 
-IMPORTANTE: Solo debes extraer y devolver la FECHA (formato YYYY-MM-DD), NO incluyas hora ni información de tiempo. Si el usuario menciona horas, ignóralas y solo considera la fecha del día.
+Reglas:
+1. Interpreta fechas relativas como "mañana", "pasado mañana", "el jueves de la otra semana" usando la fecha de hoy como referencia.
+2. Devuelve las fechas en formato YYYY-MM-DD.
+3. Si no hay una fecha clara, omite el campo `due_date`.
+4. Devuelve la respuesta en formato JSON con la siguiente estructura:
+{
+  "tasks": [
+    {
+      "title": "<TÍTULO DE LA TAREA>",
+      "due_date": "<FECHA DE VENCIMIENTO EN FORMATO YYYY-MM-DD>"
+    },
+    ...
+  ]
+}
 
+Ejemplo:
+Input: "comprar carro para mañana, casa para pasado mañana y 3 pares de zapatos para el jueves de la otra semana"
+Output: {
+  "tasks": [
+    {"title": "Comprar carro", "due_date": "2025-11-18"},
+    {"title": "Comprar casa", "due_date": "2025-11-19"},
+    {"title": "Comprar 3 pares de zapatos", "due_date": "2025-11-27"}
+  ]
+}
 """;
   }
 
@@ -123,7 +145,7 @@ IMPORTANTE: Solo debes extraer y devolver la FECHA (formato YYYY-MM-DD), NO incl
 Eres un extractor de tareas. Tu ÚNICA respuesta debe ser SOLO JSON válido según el schema provisto.
 
 - Idioma: Español.
-- CONTEXTO DE TIEMPO: ${dateContext}
+- CONTEXTO DE TIEMPO: $dateContext
 - REGLA DE FECHA: La `due_date` DEBE estar en el AÑO ACTUAL (${now.year}) si la expresión de tiempo no incluye un año diferente. Si la expresión es relativa ("mañana", "lunes"), calcúlala usando el CONTEXTO DE TIEMPO.
 - Formato `due_date`: ISO 8601 completo con zona horaria local (ej: 2025-11-08T00:00:00$tzLabel). Si no hay hora, usa T00:00:00.
 - Si NO hay una indicación de fecha CLARA, `due_date` debe ser OMITIDA.
@@ -144,7 +166,7 @@ Eres un extractor de tareas. Tu ÚNICA respuesta debe ser SOLO JSON válido seg�
           "role": "user",
           "parts": [
             // {"text": transcript},
-            {"text": _buildPrompt(transcript)}
+            {"text": _buildPrompt(transcript)},
           ],
         },
       ],
@@ -165,7 +187,8 @@ Eres un extractor de tareas. Tu ÚNICA respuesta debe ser SOLO JSON válido seg�
                   "notes": {"type": "string"},
                   "due_date": {
                     "type": "string",
-                    "description": "Fecha de vencimiento en formato YYYY-MM-DD (solo fecha, sin hora).",
+                    "description":
+                        "Fecha de vencimiento en formato YYYY-MM-DD (solo fecha, sin hora).",
                   },
                 },
                 "required": ["title"],
