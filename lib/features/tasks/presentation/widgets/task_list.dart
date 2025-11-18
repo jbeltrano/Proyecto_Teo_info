@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:proyecto_teo_info/features/tasks/data/models/task.dart';
-import 'package:proyecto_teo_info/features/tasks/presentation/controllers/task_controller.dart';
+import '../../presentation/controllers/task_controller.dart';
+import '../../../tasks/data/models/task.dart';
 
 class TaskList extends StatelessWidget {
-  const TaskList({super.key, required this.tasks});
-
   final List<Task> tasks;
+  const TaskList({super.key, required this.tasks});
 
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
@@ -14,14 +13,14 @@ class TaskList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (tasks.isEmpty) {
-      return const Center(child: Text('No hay tareas aún.'));
-    }
+    final ctrl = context.read<TaskController>();
+    if (tasks.isEmpty) return const Center(child: Text('No hay tareas aún.'));
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: tasks.length,
       separatorBuilder: (_, __) => const Divider(height: 1),
+<<<<<<< HEAD
       itemBuilder: (context, index) {
         final t = tasks[index];
         final due = t.dueDate != null
@@ -33,28 +32,177 @@ class TaskList extends StatelessWidget {
           leading: Checkbox(
             value: t.isCompleted,
             onChanged: (_) => controller.toggleTaskCompletion(t.id),
+=======
+      itemBuilder: (_, i) {
+        final t = tasks[i];
+        return Dismissible(
+          key: ValueKey(t.id.isNotEmpty ? t.id : 'task_$i'),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            color: Colors.red,
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: const Icon(Icons.delete, color: Colors.white),
+>>>>>>> a5644ed4c6ca61d313a9094369223ac62ea7f734
           ),
-          title: Text(
-            t.title,
-            style: TextStyle(
-              color: t.isCompleted ? Colors.black.withOpacity(0.4) : Colors.black,
-              decoration: t.isCompleted ? TextDecoration.lineThrough : null,
+          confirmDismiss: (_) async {
+            return await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Eliminar tarea'),
+                    content: Text('¿Eliminar “${t.title}”?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('Cancelar'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text('Eliminar'),
+                      ),
+                    ],
+                  ),
+                ) ??
+                false;
+          },
+          onDismissed: (_) {
+            ctrl.deleteTask(t.id);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Tarea eliminada: ${t.title}')),
+            );
+          },
+          child: ListTile(
+            leading: Checkbox(
+              value: t.done,
+              onChanged: (v) => ctrl.toggleDone(t.id, v ?? !t.done),
             ),
-          ),
-          subtitle: Text(
-            t.notes?.isNotEmpty == true ? '${t.notes}\n$due' : due,
-            style: TextStyle(
-              color: t.isCompleted ? Colors.black.withOpacity(0.4) : null,
+            title: Text(
+              t.title,
+              style: TextStyle(
+                decoration: t.done ? TextDecoration.lineThrough : null,
+              ),
             ),
-          ),
-          isThreeLine: t.notes?.isNotEmpty == true,
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-            onPressed: () => controller.deleteTask(t.id),
-            tooltip: 'Eliminar tarea',
+            subtitle: (t.notes != null || t.dueDate != null)
+                ? Text(
+                    [
+                      if (t.notes != null) t.notes!,
+                      if (t.dueDate != null)
+                        '${t.dueDate!.year}-${t.dueDate!.month.toString().padLeft(2, '0')}-${t.dueDate!.day.toString().padLeft(2, '0')}',
+                    ].join(' • '),
+                  )
+                : null,
+            trailing: IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () => _showEditDialog(context, ctrl, t),
+              tooltip: 'Editar',
+            ),
+            onTap: () => _showEditDialog(context, ctrl, t),
           ),
         );
       },
+    );
+  }
+
+  void _showEditDialog(BuildContext context, TaskController ctrl, Task t) {
+    final titleCtrl = TextEditingController(text: t.title);
+    final notesCtrl = TextEditingController(text: t.notes ?? '');
+    DateTime? due = t.dueDate;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 16,
+          right: 16,
+          top: 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Editar tarea',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleCtrl,
+              decoration: const InputDecoration(labelText: 'Título'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: notesCtrl,
+              decoration: const InputDecoration(labelText: 'Notas'),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    due != null
+                        ? 'Fecha: ${due?.year}-${due?.month.toString().padLeft(2, '0')}-${due?.day.toString().padLeft(2, '0')}'
+                        : 'Sin fecha',
+                  ),
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.event),
+                  label: const Text('Cambiar'),
+                  onPressed: () async {
+                    final now = DateTime.now();
+                    final picked = await showDatePicker(
+                      context: ctx,
+                      initialDate: due ?? now,
+                      firstDate: DateTime(now.year - 5),
+                      lastDate: DateTime(now.year + 5),
+                    );
+                    if (picked != null) {
+                      due = DateTime(picked.year, picked.month, picked.day);
+                      // Fuerza reconstrucción simple cerrando y reabriendo el sheet? No.
+                      // Mejor: pop y reabrir no es UX ideal; mostramos la fecha al guardar.
+                    }
+                  },
+                ),
+                if (due != null)
+                  TextButton(
+                    onPressed: () => due = null,
+                    child: const Text('Quitar fecha'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancelar'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () {
+                    final newTitle = titleCtrl.text.trim();
+                    if (newTitle.isEmpty) return;
+                    ctrl.updateTask(
+                      t.copyWith(
+                        title: newTitle,
+                        notes: notesCtrl.text.trim().isEmpty
+                            ? null
+                            : notesCtrl.text.trim(),
+                        dueDate: due,
+                      ),
+                    );
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
     );
   }
 }
