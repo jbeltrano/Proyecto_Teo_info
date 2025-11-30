@@ -8,6 +8,7 @@ import 'package:proyecto_teo_info/features/speech/presentation/widgets/hold_mic_
 import 'package:proyecto_teo_info/features/tasks/presentation/controllers/task_controller.dart';
 import 'package:proyecto_teo_info/features/tasks/presentation/widgets/task_list.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../../data/models/task.dart';
 
 class TasksPage extends StatefulWidget {
   const TasksPage({super.key});
@@ -152,6 +153,148 @@ class _TasksPageState extends State<TasksPage> {
     );
   }
 
+  void _showAddTaskDialog(BuildContext context, TaskController ctrl) {
+    final titleCtrl = TextEditingController();
+    final notesCtrl = TextEditingController();
+    DateTime? dueDate;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(20),
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    'Nueva Tarea',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: titleCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Título',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Notas (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                    textInputAction: TextInputAction.done,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.calendar_today),
+                    label: Text(
+                      dueDate == null
+                          ? 'Agregar fecha de vencimiento'
+                          : '${dueDate!.year}-${dueDate!.month.toString().padLeft(2, '0')}-${dueDate!.day.toString().padLeft(2, '0')}',
+                    ),
+                    onPressed: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setModalState(() => dueDate = picked);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () async {
+                          if (titleCtrl.text.trim().isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('El título es requerido'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                            return;
+                          }
+                          final newTask = Task(
+                            id: DateTime.now().millisecondsSinceEpoch
+                                .toString(),
+                            title: titleCtrl.text.trim(),
+                            notes: notesCtrl.text.trim().isEmpty
+                                ? null
+                                : notesCtrl.text.trim(),
+                            dueDate: dueDate,
+                            done: false,
+                          );
+
+                          Navigator.pop(ctx);
+                          await ctrl.addTask(newTask);
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Tarea creada: ${newTask.title}'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Guardar'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _speech.cancel();
@@ -176,6 +319,13 @@ class _TasksPageState extends State<TasksPage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('To Do Speech')),
+      floatingActionButton: ctrl != null
+          ? FloatingActionButton(
+              onPressed: () => _showAddTaskDialog(context, ctrl!),
+              tooltip: 'Agregar tarea manualmente',
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: Column(
         children: [
           StreamBuilder<List<ConnectivityResult>>(

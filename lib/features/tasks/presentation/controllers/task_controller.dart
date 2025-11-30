@@ -103,4 +103,16 @@ class TaskController extends ChangeNotifier {
       }
     }
   }
+
+  Future<void> addTask(Task task) async {
+    tasks.add(task);
+    notifyListeners();
+    if (db != null) {
+      try {
+        await db!.upsertAll([task]);
+      } catch (e) {
+        debugPrint('DB add error: $e');
+      }
+    }
+  }
 }
