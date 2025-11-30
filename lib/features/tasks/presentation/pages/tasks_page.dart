@@ -19,7 +19,9 @@ class TasksPage extends StatefulWidget {
 class _TasksPageState extends State<TasksPage> {
   final SpeechToText _speech = SpeechToText();
   String _transcript = '';
+  String _accumulatedText = ''; // Texto acumulado entre pausas
   bool _isListening = false;
+  bool _shouldKeepListening = false;
   String? _status;
 
   @override
@@ -35,19 +37,67 @@ class _TasksPageState extends State<TasksPage> {
       return;
     }
     final ok = await _speech.initialize(
-      onStatus: (s) => setState(() => _status = s),
+      onStatus: (s) {
+        setState(() => _status = s);
+        // Cuando termina de escuchar por pausa, reiniciar automáticamente
+        if (s == 'done' && _shouldKeepListening && mounted) {
+          _restartListening();
+        }
+      },
       onError: (e) => setState(() => _status = e.errorMsg),
     );
     if (!ok) setState(() => _status = 'Servicio de voz no disponible.');
   }
 
+  Future<void> _restartListening() async {
+    if (!_shouldKeepListening) return;
+
+    // Guardar el texto actual antes de reiniciar
+    if (_transcript.isNotEmpty) {
+      _accumulatedText = _accumulatedText.isEmpty
+          ? _transcript
+          : '$_accumulatedText $_transcript';
+    }
+
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!_shouldKeepListening || !mounted) return;
+
+    final locale = await _speech.systemLocale().then((v) => v?.localeId);
+    await _speech.listen(
+      onResult: (r) {
+        // Combinar texto acumulado con el nuevo
+        final fullText = _accumulatedText.isEmpty
+            ? r.recognizedWords
+            : '$_accumulatedText ${r.recognizedWords}';
+        setState(() => _transcript = fullText);
+      },
+      listenOptions: SpeechListenOptions(
+        partialResults: true,
+        autoPunctuation: true,
+        enableHapticFeedback: true,
+        listenMode: ListenMode.confirmation,
+        cancelOnError: false,
+      ),
+      localeId: locale,
+      pauseFor: const Duration(seconds: 3),
+      listenFor: const Duration(minutes: 10),
+    );
+  }
+
   Future<void> _start() async {
     if (_isListening) return;
     HapticFeedback.lightImpact();
+
+    // Limpiar textos al empezar nueva sesión
+    _accumulatedText = '';
+
     setState(() {
       _isListening = true;
+      _shouldKeepListening = true;
+      _transcript = '';
       _status = 'Escuchando… suelta para detener';
     });
+
     final locale = await _speech.systemLocale().then((v) => v?.localeId);
     await _speech.listen(
       onResult: (r) => setState(() => _transcript = r.recognizedWords),
@@ -55,14 +105,18 @@ class _TasksPageState extends State<TasksPage> {
         partialResults: true,
         autoPunctuation: true,
         enableHapticFeedback: true,
-        listenMode: ListenMode.dictation,
+        listenMode: ListenMode.confirmation,
+        cancelOnError: false,
       ),
       localeId: locale,
+      pauseFor: const Duration(seconds: 3),
+      listenFor: const Duration(minutes: 10),
     );
   }
 
   Future<void> _stop() async {
     if (!_isListening) return;
+    _shouldKeepListening = false;
     await _speech.stop();
     setState(() {
       _isListening = false;
@@ -121,7 +175,7 @@ class _TasksPageState extends State<TasksPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Tareas por voz 3')),
+      appBar: AppBar(title: const Text('To Do Speech')),
       body: Column(
         children: [
           StreamBuilder<List<ConnectivityResult>>(
@@ -181,9 +235,37 @@ class _TasksPageState extends State<TasksPage> {
                         if (ctrl?.isLoading ?? false)
                           const LinearProgressIndicator(),
                         const SizedBox(height: 8),
-                        Text('Tareas', style: theme.textTheme.titleLarge),
+
+                        // Tareas pendientes
+                        _buildSectionHeader(
+                          theme,
+                          'Tareas Pendientes',
+                          Icons.pending_actions,
+                          theme.colorScheme.primary,
+                        ),
                         const SizedBox(height: 8),
-                        TaskList(tasks: ctrl?.tasks ?? const []),
+                        TaskList(
+                          tasks: (ctrl?.tasks ?? const [])
+                              .where((t) => !t.done)
+                              .toList(),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Tareas completadas
+                        _buildSectionHeader(
+                          theme,
+                          'Tareas Realizadas',
+                          Icons.check_circle,
+                          Colors.green,
+                        ),
+                        const SizedBox(height: 8),
+                        TaskList(
+                          tasks: (ctrl?.tasks ?? const [])
+                              .where((t) => t.done)
+                              .toList(),
+                        ),
+
                         if (ctrl?.error != null) ...[
                           const SizedBox(height: 12),
                           Text(

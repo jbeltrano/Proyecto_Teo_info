@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application
         android:name="${applicationName}"
-        android:label="Proyecto_Teo_info"
+        android:label="To Do Speech"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
