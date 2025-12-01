@@ -121,9 +121,9 @@ Ejemplo:
 Input: "comprar carro para mañana, casa para pasado mañana y 3 pares de zapatos para el jueves de la otra semana"
 Output: {
   "tasks": [
-    {"title": "Comprar carro", "due_date": "2025-11-18"},
-    {"title": "Comprar casa", "due_date": "2025-11-19"},
-    {"title": "Comprar 3 pares de zapatos", "due_date": "2025-11-27"}
+    {"title": "Comprar carro", "notes": "Para mañana", "due_date": "2025-11-18"},
+    {"title": "Comprar casa", "notes": "Para pasado mañana", "due_date": "2025-11-19"},
+    {"title": "Comprar 3 pares de zapatos", "notes": "Para el jueves de la otra semana", "due_date": "2025-11-27"}
   ]
 }
 """;
