@@ -65,12 +65,53 @@ class TaskList extends StatelessWidget {
               ),
             ),
             subtitle: (t.notes != null || t.dueDate != null)
-                ? Text(
-                    [
-                      if (t.notes != null) t.notes!,
-                      if (t.dueDate != null)
-                        '${t.dueDate!.year}-${t.dueDate!.month.toString().padLeft(2, '0')}-${t.dueDate!.day.toString().padLeft(2, '0')}',
-                    ].join(' • '),
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (t.notes != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.notes,
+                              size: 14,
+                              color: Colors.grey[600],
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                t.notes!,
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (t.dueDate != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: Colors.blue[600],
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${t.dueDate!.year}-${t.dueDate!.month.toString().padLeft(2, '0')}-${t.dueDate!.day.toString().padLeft(2, '0')}',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
                   )
                 : null,
             trailing: IconButton(
