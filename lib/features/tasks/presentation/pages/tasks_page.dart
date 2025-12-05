@@ -12,14 +12,26 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/task.dart';
 
-class TasksPage extends StatefulWidget {
+class TasksPage extends StatelessWidget {
   const TasksPage({super.key});
 
   @override
-  State<TasksPage> createState() => _TasksPageState();
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('To Do Speech')),
+      body: const TasksPageBody(),
+    );
+  }
 }
 
-class _TasksPageState extends State<TasksPage> {
+class TasksPageBody extends StatefulWidget {
+  const TasksPageBody({super.key});
+
+  @override
+  State<TasksPageBody> createState() => _TasksPageBodyState();
+}
+
+class _TasksPageBodyState extends State<TasksPageBody> {
   final SpeechToText _speech = SpeechToText();
   String _transcript = '';
   String _accumulatedText = ''; // Texto acumulado entre pausas
@@ -319,9 +331,40 @@ class _TasksPageState extends State<TasksPage> {
       ctrl = null;
     }
 
+    final user = Supabase.instance.client.auth.currentUser;
+    final fullName = user?.userMetadata?['full_name'] as String? ?? '';
+    final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
+    final firstName = fullName
+        .trim()
+        .split(' ')
+        .firstWhere((p) => p.isNotEmpty, orElse: () => 'Tus');
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tus tareas'),
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Padding(
+          padding: const EdgeInsets.only(left: 12),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.grey.shade200,
+                backgroundImage: avatarUrl != null
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl == null
+                    ? Text(
+                        firstName.characters.first.toUpperCase(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      )
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Text('$firstName, tus tareas son:'),
+            ],
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -332,7 +375,9 @@ class _TasksPageState extends State<TasksPage> {
                 await Supabase.instance.client.auth.signOut();
                 await GoogleSignIn.instance.disconnect();
               } catch (e) {
-                // No mostrar nada en caso de error
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Error al cerrar sesión: $e')),
+                );
               }
             },
           ),

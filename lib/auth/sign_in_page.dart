@@ -61,7 +61,7 @@ class _SignInPageState extends State<SignInPage> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Image.asset(
-                    'assets/image.png',
+                    'assets/app_icon.png',
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => const FlutterLogo(size: 160),
                   ),
