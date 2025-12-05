@@ -8,6 +8,8 @@ import 'package:proyecto_teo_info/features/speech/presentation/widgets/hold_mic_
 import 'package:proyecto_teo_info/features/tasks/presentation/controllers/task_controller.dart';
 import 'package:proyecto_teo_info/features/tasks/presentation/widgets/task_list.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/models/task.dart';
 
 class TasksPage extends StatefulWidget {
@@ -318,7 +320,24 @@ class _TasksPageState extends State<TasksPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('To Do Speech')),
+      appBar: AppBar(
+        title: const Text('Tus tareas'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await Supabase.instance.client.auth.signOut();
+                await GoogleSignIn.instance.disconnect();
+              } catch (e) {
+                // No mostrar nada en caso de error
+              }
+            },
+          ),
+        ],
+      ),
       floatingActionButton: ctrl != null
           ? FloatingActionButton(
               onPressed: () => _showAddTaskDialog(context, ctrl!),

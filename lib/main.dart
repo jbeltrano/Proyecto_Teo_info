@@ -3,25 +3,39 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'package:proyecto_teo_info/features/tasks/presentation/controllers/task_controller.dart';
 import 'package:proyecto_teo_info/features/tasks/data/ai/ai_client.dart';
-import 'package:proyecto_teo_info/features/tasks/presentation/pages/tasks_page.dart';
 import 'package:proyecto_teo_info/features/tasks/data/local/tasks_db.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:proyecto_teo_info/auth/google_auth_service.dart';
+import 'package:proyecto_teo_info/auth/sign_in_page.dart';
+import 'package:proyecto_teo_info/features/tasks/presentation/pages/tasks_page.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
 
-  // Cargar el archivo .env desde assets
-  try {
-    await dotenv.load(fileName: '.env');
-    print('.env loaded successfully');
-  } catch (e, st) {
-    print('Error loading .env: $e\n$st');
-  }
+  final supabase = await Supabase.initialize(
+    url: dotenv.env['EXPO_PUBLIC_SUPABASE_URL']!,
+    anonKey: dotenv.env['EXPO_PUBLIC_SUPABASE_KEY']!,
+  );
 
-  runApp(const MyApp());
+  final googleSignIn = GoogleSignIn.instance;
+  await googleSignIn.initialize(
+    clientId: dotenv.env['GCP_ANDROID_CLIENT_ID'],
+    serverClientId: dotenv.env['GCP_WEB_CLIENT_ID'],
+  );
+
+  final googleService = GoogleAuthService(
+    supabaseClient: supabase.client,
+    googleSignIn: googleSignIn,
+  );
+
+  runApp(MyApp(googleAuthService: googleService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.googleAuthService});
+  final GoogleAuthService googleAuthService;
 
   @override
   Widget build(BuildContext context) {
@@ -33,19 +47,37 @@ class MyApp extends StatelessWidget {
             aiClient: HttpAiClient(
               endpoint:
                   'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
-              apiKey: apiKey, // apiKey en query ?key=...
-              // accessToken: null, // solo si usas OAuth
+              apiKey: apiKey,
             ),
-            db: TasksDb(), // quítalo si aún no quieres persistencia
+            db: TasksDb(),
           ),
         ),
       ],
       child: MaterialApp(
-        title: 'Tareas por voz',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(useMaterial3: true),
-        home: const TasksPage(),
+        home: AuthGate(googleAuthService: googleAuthService),
       ),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key, required this.googleAuthService});
+  final GoogleAuthService googleAuthService;
+
+  @override
+  Widget build(BuildContext context) {
+    final authStream = Supabase.instance.client.auth.onAuthStateChange.map(
+      (e) => e.session,
+    );
+    return StreamBuilder<Session?>(
+      stream: authStream,
+      builder: (context, snapshot) {
+        final session =
+            snapshot.data ?? Supabase.instance.client.auth.currentSession;
+        if (session != null) return const TasksPage();
+        return SignInPage(googleAuthService: googleAuthService);
+      },
     );
   }
 }
